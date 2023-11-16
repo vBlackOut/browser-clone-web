@@ -20,7 +20,7 @@ Use browser to re-copy a web page
 
 `source venv/bin/activate`
 
-`python3 main.py`
+`python3 main.py <url>`
 
 ## Requirements to script service install
 - Python3, Pip3
