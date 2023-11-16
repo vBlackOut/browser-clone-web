@@ -4,12 +4,12 @@
 # __license__ = "GPL"
 # __version__ = "2.1.0"
 # __email__ = "a2FpdG9raWQxNDEyLmNvbmFuQGdtYWlsLmNvbQ=="
+# remasterized by vBlackOut
 __black_list_type__ = ['.php']
 __status_code__ = [200, 404]
 __clone_all__ = False
 __zip__ = False
-__headless__ = False
-__clone_url__ = 'https://themesbrand.com/velzon/html/default/index.html'
+__headless__ = True
 
 import os
 import os.path
@@ -17,6 +17,7 @@ import re
 import shutil
 import time
 from urllib.parse import urlparse
+import sys
 
 import requests
 from bs4 import BeautifulSoup
@@ -24,6 +25,8 @@ from seleniumwire import webdriver
 from tqdm import tqdm
 from webdriver_manager.chrome import ChromeDriverManager
 from zipfile36 import ZipFile
+
+__clone_url__ = sys.argv[1]
 
 
 def extract_info_url(url, main=False):
@@ -92,6 +95,7 @@ class File:
 
     def check_exists(self, url):
         info_url = extract_info_url(url)
+
         if info_url['domain'] != self.info_url['domain']:
             return False
         path_file = info_url['path'] + info_url['file_name']
@@ -100,6 +104,7 @@ class File:
     def get_all_urls_in_page(self, page_source):
         result = []
         source = BeautifulSoup(page_source, 'html.parser')
+
         try:
             data_a = source.find_all("a")
         except Exception:
@@ -127,6 +132,7 @@ class File:
                     result.append(self.info_url['url'] + href)
             if domain == self.info_url['domain']:
                 result.append(href)
+
         return result
 
 
@@ -155,18 +161,26 @@ class BrowserClone(File):
         self.driver = webdriver.Chrome(chrome_options=options, executable_path=ChromeDriverManager().install())
         self.driver.get(self.url)
         print('Waiting 30s to make sure the page has finished loading...')
-        time.sleep(30)
+        time.sleep(5)
         self.set_page_source()
         self.extract_file()
 
         print('Getting all the links to crawl...')
-        all_urls_in_page = super().get_all_urls_in_page(self.page_source)
-        for url_in_page in all_urls_in_page:
+
+        all_urls_in_page = list(set(self.driver.execute_script("return [...document.links].map(l => l.href);")))
+
+        for i, url in enumerate(all_urls_in_page):
+            if "javascript:" in url and "void" in url:
+                del all_urls_in_page[i]
+        # all_urls_in_page = super().get_all_urls_in_page(self.page_source)
+        for i, url_in_page in enumerate(all_urls_in_page):
             self.all_url.append(url_in_page)
             self.extract_html(url_in_page)
+            print(i, "/", len(all_urls_in_page))
 
         # clone options
         if __clone_all__:
+            print("clone all webpage please wait...")
             all_url = list(set(self.all_url))
             for url in all_url:
                 self.driver.get(url)
@@ -187,12 +201,21 @@ class BrowserClone(File):
 
     def extract_html(self, url):
         super().__init__(url)
+        print(url)
         self.driver.get(url)
         self.set_page_source()
-        all_urls_in_page = super().get_all_urls_in_page(self.page_source)
-        for url_in_page in all_urls_in_page:
+        all_urls_in_page = list(set(self.driver.execute_script("return [...document.links].map(l => l.href);")))
+
+        for i, url in enumerate(all_urls_in_page):
+            if "javascript:" in url and "void" in url:
+                del all_urls_in_page[i]
+
+        # all_urls_in_page = super().get_all_urls_in_page(self.page_source)
+        for i, url_in_page in enumerate(all_urls_in_page):
             self.all_url.append(url_in_page)
-            self.headers = self.driver.requests[0].headers
+            # self.headers = self.driver.requests[0].headers
+            # print(self.headers)
+            # print(">", i, "/", len(all_urls_in_page))
 
     def extract_file(self, down=False):
         for request in self.driver.requests:
