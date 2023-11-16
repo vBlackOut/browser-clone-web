@@ -170,7 +170,7 @@ class BrowserClone(File):
         all_urls_in_page = list(set(self.driver.execute_script("return [...document.links].map(l => l.href);")))
 
         for i, url in enumerate(all_urls_in_page):
-            if "javascript:" in url and "void" in url:
+            if "javascript:" in url or "void" in url:
                 del all_urls_in_page[i]
         # all_urls_in_page = super().get_all_urls_in_page(self.page_source)
         for i, url_in_page in enumerate(all_urls_in_page):
@@ -207,7 +207,7 @@ class BrowserClone(File):
         all_urls_in_page = list(set(self.driver.execute_script("return [...document.links].map(l => l.href);")))
 
         for i, url in enumerate(all_urls_in_page):
-            if "javascript:" in url and "void" in url:
+            if "javascript:" in url or "void" in url:
                 del all_urls_in_page[i]
 
         # all_urls_in_page = super().get_all_urls_in_page(self.page_source)
